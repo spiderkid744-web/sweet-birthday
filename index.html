@@ -1,19 +1,224 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birthday Celebration</title>
+    <title>生日快乐 - 甜甜酱</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f9f9f9; text-align: center; }
-        h1 { color: #ff69b4; }
-        p { font-size: 1.2em; }
-        .cake { margin: 20px auto; width: 200px; }
+        :root {
+            --pink-light: #ffebf2;
+            --pink-main: #ff85a2;
+            --pink-dark: #ff4d6d;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--pink-light);
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        /* 第一阶段：密码弹窗 */
+        #auth-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 235, 242, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .login-box {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(255, 133, 162, 0.3);
+            text-align: center;
+        }
+        .login-box h2 { color: var(--pink-dark); margin-bottom: 20px; }
+        .login-box input {
+            padding: 10px;
+            width: 200px;
+            border: 2px solid var(--pink-main);
+            border-radius: 10px;
+            outline: none;
+            text-align: center;
+            font-size: 1.2em;
+        }
+        .btn-group { margin-top: 20px; }
+        .btn-group button {
+            padding: 10px 25px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-confirm { background: var(--pink-main); color: white; }
+        .btn-cancel { background: #eee; }
+
+        /* 第二阶段：气泡容器 */
+        #bubble-container {
+            display: none;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #fff0f5;
+        }
+        .bubble {
+            position: absolute;
+            padding: 12px 20px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #ffc2d1, #ff85a2);
+            color: white;
+            font-weight: bold;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.1);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+                       float 3s ease-in-out infinite alternate;
+            white-space: nowrap;
+        }
+        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1); }
+        @keyframes float { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+
+        /* 第三阶段：粒子画布 */
+        #canvas-stage {
+            display: none;
+            background: #1a1a1a; /* 粒子通常在暗色背景下更好看 */
+        }
     </style>
 </head>
 <body>
-    <h1>Happy Birthday!</h1>
-    <p>Join us for a celebration filled with joy and laughter.</p>
-    <img src="cake.png" alt="Birthday Cake" class="cake">
+
+    <div id="auth-overlay">
+        <div class="login-box">
+            <h2>甜甜妈妈小狗祝你生日快乐呀🎂</h2>
+            <input type="password" id="password" placeholder="请输入密码">
+            <div class="btn-group">
+                <button class="btn-confirm" onclick="checkPassword()">确定</button>
+                <button class="btn-cancel" onclick="alert('不要取消嘛~')">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="bubble-container"></div>
+
+    <canvas id="canvas-stage"></canvas>
+
+    <script>
+        const bubblesData = ["祝甜甜酱🩷永远开心", "甜甜酱🩷生日快乐", "你是最棒的甜甜酱🩷", "漂亮可爱的甜甜酱🩷", "心想事成甜甜酱🩷"]; // 循环使用
+        const passwordCorrect = "000321";
+
+        // 1. 验证密码
+        function checkPassword() {
+            const input = document.getElementById('password').value;
+            if (input === passwordCorrect) {
+                document.getElementById('auth-overlay').style.display = 'none';
+                startBubbles();
+            } else {
+                alert("密码不对哦，再想想~");
+            }
+        }
+
+        // 2. 气泡逻辑
+        function startBubbles() {
+            const container = document.getElementById('bubble-container');
+            container.style.display = 'block';
+            let count = 0;
+
+            const interval = setInterval(() => {
+                if (count >= 30) {
+                    clearInterval(interval);
+                    setTimeout(startParticles, 2000); // 气泡出完2秒后进入粒子画面
+                    return;
+                }
+                const b = document.createElement('div');
+                b.className = 'bubble';
+                b.innerHTML = "🎀 " + bubblesData[count % bubblesData.length];
+                
+                // 随机位置（尽量避开完全重叠）
+                b.style.left = Math.random() * 80 + 5 + "%";
+                b.style.top = Math.random() * 85 + 5 + "%";
+                
+                container.appendChild(b);
+                count++;
+            }, 300); // 每300毫秒弹出一个
+        }
+
+        // 3. 粒子特效逻辑 (简化核心版)
+        const canvas = document.getElementById('canvas-stage');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function startParticles() {
+            document.getElementById('bubble-container').style.display = 'none';
+            canvas.style.display = 'block';
+            resize();
+            initParticles();
+            animate();
+        }
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        class Particle {
+            constructor(x, y, targetX, targetY) {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.targetX = targetX;
+                this.targetY = targetY;
+                this.color = `hsl(${Math.random() * 40 + 330}, 100%, 70%)`; // 粉色系粒子
+                this.size = Math.random() * 2 + 1;
+            }
+            update() {
+                this.x += (this.targetX - this.x) * 0.08;
+                this.y += (this.targetY - this.y) * 0.08;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            // 在离屏Buffer中绘制文字，获取像素点
+            const offscreen = document.createElement('canvas');
+            const oCtx = offscreen.getContext('2d');
+            offscreen.width = canvas.width;
+            offscreen.height = canvas.height;
+            
+            oCtx.fillStyle = "white";
+            oCtx.font = "bold 80px Arial";
+            oCtx.textAlign = "center";
+            oCtx.fillText("惠甜甜", canvas.width/2, canvas.height/2 - 40);
+            oCtx.font = "bold 50px Arial";
+            oCtx.fillText("happybirthday", canvas.width/2, canvas.height/2 + 40);
+
+            const data = oCtx.getImageData(0, 0, canvas.width, canvas.height).data;
+            for (let i = 0; i < canvas.height; i += 4) {
+                for (let j = 0; j < canvas.width; j += 4) {
+                    if (data[(i * canvas.width + j) * 4 + 3] > 128) {
+                        particles.push(new Particle(0, 0, j, i));
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+    </script>
 </body>
 </html>
